@@ -1,54 +1,66 @@
+import random
+
 import numpy as np
 
 # Generator matrix G
-G = np.array([[1, 0, 0, 0],
-              [0, 1, 0, 0],
-              [0, 0, 1, 0],
-              [0, 0, 0, 1],
-              [1, 1, 0, 1],
-              [1, 0, 1, 1],
-              [0, 1, 1, 1]])
+G = np.array([
+    [1, 1, 1, 0, 0, 0, 0],
+    [1, 0, 0, 1, 1, 0, 0],
+    [0, 1, 0, 1, 0, 1, 0],
+    [1, 1, 0, 1, 0, 0, 1]
+])
 
-# Parity-check matrix H
-H = np.array([[0, 0, 0, 1, 1, 1, 1],
-              [0, 1, 1, 0, 0, 1, 1],
-              [1, 0, 1, 0, 1, 0, 1]])
+# Parity check matrix H
+H = np.array([
+    [1, 0, 1, 0, 1, 0, 1],
+    [0, 1, 1, 0, 0, 1, 1],
+    [0, 0, 0, 1, 1, 1, 1]
+])
 
+messages = [
+    [0, 0, 0, 0], [0, 0, 0, 1], [0, 0, 1, 0], [0, 0, 1, 1],
+    [0, 1, 0, 0], [0, 1, 0, 1], [0, 1, 1, 0], [0, 1, 1, 1],
+    [1, 0, 0, 0], [1, 0, 0, 1], [1, 0, 1, 0], [1, 0, 1, 1],
+    [1, 1, 0, 0], [1, 1, 0, 1], [1, 1, 1, 0], [1, 1, 1, 1]
+]
 
-# Encode function
-def encode(message):
-    # Ensure message length is 4
-    assert len(message) == 4, "Message length must be 4 bits"
-    message_array = np.array([int(bit) for bit in message])
-    # Reshape message array to a column vector
-    message_array = np.reshape(message_array, (4, 1))
-    codeword = np.dot(G, message_array) % 2
-    return ''.join(map(str, np.reshape(codeword, (7,))))
+data_bits = [2, 4, 5, 6]
+def add_noise(data, index):
+    data = list(data)
+    data[index] = str(int(data[index]) ^ 1)  # Flipping the bit
+    return data
 
+# First four bits are data, fifth, sixth and seventh are parity checks
+def encode(data):
+    return np.dot(data, G) % 2
 
 # Decode function
-def decode(received):
-    received_array = np.array([int(bit) for bit in received])
-    received_array = np.reshape(received_array, (7, 1))
-    syndrome = np.dot(H, received_array) % 2
-    error_position = np.sum(syndrome * [1, 2, 4])
-    if error_position != 0:
-        # Flip the bit at the error position
-        received_array[error_position - 1] = 1 - received_array[error_position - 1]
-    # Extract original message
-    original_message = received_array[[2, 4, 5, 6]]  # Corrected indices to be 0-based
-    return ''.join(map(str, np.reshape(original_message, (4,))))
+def decode(received_code):
+    received_code = np.array([int(bit) for bit in received_code])
+    syndrome = np.dot(received_code, H.T) % 2
+    # Check if syndrome is non-zero
+    if np.any(syndrome):
+        # Determine the position of the erroneous bit
+        error_position = np.sum(syndrome * [1, 2, 4]) - 1
+
+        # Correct the bit at the determined position
+        received_code[error_position] = 1 - received_code[error_position]
+
+    return received_code[[2, 4, 5, 6]]
+
+def checkEquals(received, expected):
+    for index in [0, len(received)]:
+        if received[index] != expected[index]:
+            return False
+    return True
 
 
-# Example usage
-message = "1011"
-print("Original message:", message)
-encoded_message = encode(message)
-print("Encoded message:", encoded_message)
-# Simulate a transmission error
-received_message = encoded_message
-# Flip one bit
-received_message = received_message[:3] + str(1 - int(received_message[3])) + received_message[4:]
-print("Received message with error:", received_message)
-decoded_message = decode(received_message)
-print("Decoded message:", decoded_message)
+
+encoded_messages = np.array([encode(message) for message in messages])
+noise_messages = np.array([add_noise(encoded_message, data_bits[random.randint(0, 3)]) for encoded_message in encoded_messages])
+print(noise_messages)
+decoded_messages = np.array([decode(noisy_message) for noisy_message in encoded_messages])
+
+for i in range(len(encoded_messages)):
+    print("DATA: ", messages[i],"| ENCODED: ", encoded_messages[i], " | NOISY: ", noise_messages[i], " | FIXED IS: ", decoded_messages[i])
+#print(checkEquals(decoded_messages, messages))
