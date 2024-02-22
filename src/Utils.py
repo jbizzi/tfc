@@ -30,9 +30,14 @@ def noiseString(rate, word):
 
     return word
 
-def caculateEquality(original, decoded):
+def calculateRecall(original, decoded):
     equals = 0
     for i in range(0, len(original)):
         if (int(original[i]) == int(decoded[i])):
             equals += 1
-    return equals/len(original)
+    incorrect_bits = (len(original) - equals)
+    recall = equals/len(original)
+    snr = len(original)/(incorrect_bits if incorrect_bits != 0 else 1 )
+    snr_without_noise = (len(original) - incorrect_bits)/incorrect_bits if incorrect_bits != 0 else 1
+    return recall,snr, snr_without_noise
+
