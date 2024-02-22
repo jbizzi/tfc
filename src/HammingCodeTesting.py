@@ -1,10 +1,12 @@
 import numpy as np
+import matplotlib.pyplot as plt
 
 import HammingCode
 import Utils
 
-noise_rates = np.linspace(0, 1, 11)
-sample = Utils.generate_random_string(32)
+noise_rates = np.linspace(0, 1, 101)
+sample = Utils.generate_random_string(2**15)
+
 def encode_sample(data):
     encoded_data = []
     for i in range(0, len(data) - 3, 4):
@@ -17,7 +19,6 @@ def decode_sample(data):
         decoded_data.extend(HammingCode.decode(data[i:i + 7]).T)
     return decoded_data
 
-# decoded data is only adding first?
 
 encoded_sample = encode_sample(sample)
 
@@ -27,13 +28,14 @@ for rate in noise_rates:
 
 
 decoded_samples = []
-eficiency = []
+recall = []
 
 for noisy_sample in noisy_samples:
     decoded_samples.append(decode_sample(noisy_sample))
-    print(sample, decoded_samples[-1])
-    eficiency.append(Utils.caculateEquality(sample, decoded_samples[-1]))
-
-print(eficiency)
+    recall.append(Utils.caculateEquality(sample, decoded_samples[-1]))
 
 
+plt.plot(noise_rates, recall)
+plt.xlabel('Noise Rates')
+plt.ylabel('Recall')
+plt.show()
