@@ -30,3 +30,10 @@ def noiseString(rate, word):
         word[each] = str(int(word[each]) ^ 1)
 
     return word
+
+def caculateEquality(original, decoded):
+    equals = 0
+    for i in range(0, len(original)):
+        if (int(original[i]) == int(decoded[i])):
+            equals += 1
+    return equals/len(original)
