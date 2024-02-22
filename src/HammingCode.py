@@ -25,6 +25,7 @@ messages = [
 ]
 
 data_bits = [2, 4, 5, 6]
+
 def add_noise(data, index):
     data = list(data)
     data[index] = str(int(data[index]) ^ 1)  # Flipping the bit
@@ -32,7 +33,7 @@ def add_noise(data, index):
 
 # First four bits are data, fifth, sixth and seventh are parity checks
 def encode(data):
-    return np.dot(data, G) % 2
+    return np.dot(np.array([int(bit) for bit in data]), G) % 2
 
 # Decode function
 def decode(received_code):
@@ -48,19 +49,3 @@ def decode(received_code):
 
     return received_code[[2, 4, 5, 6]]
 
-def checkEquals(received, expected):
-    for index in [0, len(received)]:
-        if received[index] != expected[index]:
-            return False
-    return True
-
-
-
-encoded_messages = np.array([encode(message) for message in messages])
-noise_messages = np.array([add_noise(encoded_message, data_bits[random.randint(0, 3)]) for encoded_message in encoded_messages])
-print(noise_messages)
-decoded_messages = np.array([decode(noisy_message) for noisy_message in encoded_messages])
-
-for i in range(len(encoded_messages)):
-    print("DATA: ", messages[i],"| ENCODED: ", encoded_messages[i], " | NOISY: ", noise_messages[i], " | FIXED IS: ", decoded_messages[i])
-#print(checkEquals(decoded_messages, messages))
