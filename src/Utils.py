@@ -1,8 +1,10 @@
 import random
 import numpy as np
+import math
 
 
 def generate_random_string(length):
+
     # Define the characters to choose fromstring.digits
     characters = ['0', '1']
 
@@ -10,7 +12,6 @@ def generate_random_string(length):
     random_string = ''.join(random.choice(characters) for _ in range(length))
 
     return random_string
-
 
 def checkEquals(received, expected):
     for index in range(0, len(received)):
@@ -36,8 +37,9 @@ def calculateRecall(original, decoded):
         if (int(original[i]) == int(decoded[i])):
             equals += 1
     incorrect_bits = (len(original) - equals)
-    recall = equals/len(original)
-    snr = len(original)/(incorrect_bits if incorrect_bits != 0 else 1 )
-    snr_without_noise = (len(original) - incorrect_bits)/incorrect_bits if incorrect_bits != 0 else 1
-    return recall,snr, snr_without_noise
+    ber = incorrect_bits/len(original)
+    snr = equals/(incorrect_bits if incorrect_bits != 0 else 1)
+    return ber,snr
 
+def dbValueOf(value):
+    return 10 * math.log10(value)

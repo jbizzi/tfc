@@ -1,11 +1,11 @@
 import numpy as np
 import matplotlib.pyplot as plt
-
+import math
 import HammingCode
 import Utils
 
-sample_length = 2 ** 15
-noise_rates = np.linspace(0, 1, 101)
+sample_length = 2 ** 10
+noise_rates = np.linspace(0, 1, 1001)
 sample = Utils.generate_random_string(sample_length)
 
 
@@ -30,38 +30,22 @@ for rate in noise_rates:
     noisy_samples.append(Utils.noiseString(rate, encoded_sample))
 
 decoded_samples = []
-recalls = []
-ber = []
-snrs = []
-snrs_sem_ruido = []
+ber_values = []
+snr_values = []
 
 for noisy_sample in noisy_samples:
     decoded_samples.append(decode_sample(noisy_sample))
-    recall, snr, snr_sem_ruido = Utils.calculateRecall(sample, decoded_samples[-1])
-    snrs.append(snr)
-    snrs_sem_ruido.append(snr_sem_ruido)
-    recalls.append(recall)
-    ber.append(1 - recall)
+    ber, snr = Utils.calculateRecall(sample, decoded_samples[-1])
+    ber_values.append(ber)
+    snr_values.append(snr)
 
-#plt.plot(noise_rates, snrs, label='SNR')
-#plt.plot(noise_rates, snrs_sem_ruido, label='SNR sem ruído')
+print(noise_rates)
+snrs_db = [Utils.dbValueOf(snr) for snr in snr_values]
 plt.figure()
-plt.plot(noise_rates, recalls, label='Recall')
-plt.plot(noise_rates, ber, label='BER')
-
-plt.xlabel('Noise Rates')
-plt.ylabel('Metrics')
-plt.legend()
-plt.show()
-
-
-plt.figure()
-plt.plot(noise_rates, snrs, label='SNR')
-plt.plot(noise_rates, snrs_sem_ruido, label='SNR sem ruído')
-
-plt.xlabel('Noise Rates')
-plt.ylabel('Metrics')
-plt.xlim(0.05, 1)
-plt.ylim(0, 50)
+plt.plot(snrs_db, ber_values)
+plt.xlabel('SNR (dB)')
+plt.xlim(0, 35)
+plt.ylabel('BER')
+plt.yscale("log")
 plt.legend()
 plt.show()
