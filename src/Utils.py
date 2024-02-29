@@ -2,6 +2,22 @@ import random
 import numpy as np
 import math
 
+from src import HammingCode
+
+
+def encode_sample(data):
+    encoded_data = []
+    for i in range(0, len(data) - 3, 4):
+        encoded_data.extend(HammingCode.encode(data[i:i + 4]))
+    return encoded_data
+
+
+def decode_sample(data):
+    decoded_data = []
+    for i in range(0, len(data) - 6, 7):
+        decoded_data.extend(HammingCode.decode(data[i:i + 7]).T)
+    return decoded_data
+
 
 def generate_random_string(length):
 
@@ -19,6 +35,8 @@ def checkEquals(received, expected):
             return False
     return True
 
+def toInt(list):
+    return [int(string_value) for string_value in list]
 
 def noiseString(rate, word):
     word = np.array([int(bit) for bit in word])
@@ -43,3 +61,18 @@ def calculateRecall(original, decoded):
 
 def dbValueOf(value):
     return 10 * math.log10(value)
+
+def generateDataSet(length):
+
+    # Basic setup
+    noise_rates = np.linspace(0, 1, 1001)
+    sample = generate_random_string(length)
+
+    # Encode
+    encoded_sample = encode_sample(sample)
+
+    # Insert Noise
+    noisy_samples = []
+    for rate in noise_rates:
+        noisy_samples.append(noiseString(rate, encoded_sample))
+    return noisy_samples, encoded_sample, sample, noise_rates

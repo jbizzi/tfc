@@ -1,76 +1,86 @@
 import numpy as np
 import tensorflow as tf
 
-# Parâmetros do código de Hamming
-k = 4  # Número de bits de informação
-n = 7  # Número total de bits (incluindo os bits de paridade)
-parity_check_matrix = np.array([[1, 1, 0, 1, 1, 0, 0],
-                                [1, 0, 1, 1, 0, 1, 0],
-                                [0, 1, 1, 1, 0, 0, 1]])
+import numpy as np
+import tensorflow as tf
+from src import Utils
 
-# Funções auxiliares
-def hamming_encode(bits):
-    bits_with_parity = np.zeros(n, dtype=int)
-    bits_with_parity[:k] = bits
-    parity_bits = np.dot(parity_check_matrix, bits_with_parity) % 2
-    return np.concatenate((bits, parity_bits))
+sample_length = 2 ** 4
+chunk_size = 7
+noise_rates = np.linspace(0, 1, 11)
 
-def add_noise(codeword, p):
-    noise = np.random.rand(len(codeword)) < p
-    noisy_codeword = (codeword + noise) % 2
-    return noisy_codeword
 
-def hamming_decode(codeword):
-    syndrome = np.dot(parity_check_matrix, codeword) % 2
-    error_position = np.sum([2**i for i, bit in enumerate(syndrome) if bit])
-    if error_position > 0:
-        codeword[error_position - 1] = 1 - codeword[error_position - 1]
-    return codeword[:k]
+def generate_data(num_samples):
+    data = []
+    for i in range(0, len(noise_rates)):
+        data.append(''.join(np.random.choice(['0', '1'], size=sample_length)))
+
+    encoded_data = [Utils.encode_sample(bit) for bit in data]
+    noisy_data = [Utils.noiseString(error_rate, word) for word, error_rate in zip(encoded_data, noise_rates)]
+    return noisy_data, data
+
+
+# Função para criar e treinar a rede neural
+def train_neural_network(noisy_data, original_data):
+    model = tf.keras.Sequential([
+        tf.keras.layers.Dense(7, activation='relu', input_shape=(7,)),  # Ajustado para o comprimento da string
+        tf.keras.layers.Dense(7, activation='relu'),  # Ajustado para o comprimento da string
+        tf.keras.layers.Dense(4, activation='sigmoid')  # Ajustado para o comprimento da string
+    ])
+
+    model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
+
+    # reshape data to be 7 bits and 4 bits each
+    noisy_data_reshaped = []
+    for noisy_sample in noisy_data:
+        for index in range(0, len(noisy_sample), 7):
+            noisy_data_reshaped.append(Utils.toInt(noisy_sample[index:index + 7]))
+    noisy_data_reshaped = np.array(noisy_data_reshaped)
+
+    original_data_reshaped = []
+    for original_sample in original_data:
+        for index in range(0, len(original_sample), 4):
+            original_data_reshaped.append(np.array(Utils.toInt(list(original_sample)[index:index + 4]), dtype=int))
+    original_data_reshaped = np.array(original_data_reshaped)
+
+    model.fit(
+        noisy_data_reshaped,
+        original_data_reshaped,
+        epochs=50,
+        batch_size=int(sample_length / chunk_size)
+    )
+
+    return model
+
+def decode_and_correct(encoded_data, model):
+    decoded_data = []
+    for input_index in range(0, len(encoded_data), 7):
+        input = np.array(Utils.toInt(encoded_data[input_index:input_index + 7]))
+        input = tf.expand_dims(input, axis=0)
+        decoded_data.append(model.predict(input))
+    decoded_data = np.round(decoded_data)
+    return ''.join(str(int(each)) for each in np.concatenate(np.concatenate(decoded_data)))
+
 
 # Gerar dados de treinamento
-num_samples = 10000
-train_data = np.random.randint(2, size=(num_samples, k))
-#print("Training Data is:", train_data[1])
-train_codewords = np.array([hamming_encode(bits) for bits in train_data])
-#print("\n Training code words are:", train_codewords[1])
-train_noisy_codewords = np.array([add_noise(codeword, 0.1) for codeword in train_codewords])
-#print("\n Training noisy code words are:", train_noisy_codewords[1])
-train_labels = np.array([hamming_decode(codeword) for codeword in train_noisy_codewords])
-#print("\n Training labels are:", train_labels[1])
-print(train_labels == train_data)
+num_samples = 1000
+string_length = 10  # Parâmetro para o comprimento das strings
+noisy_data, original_data = generate_data(num_samples)
 
-# Construir o modelo
-model = tf.keras.models.Sequential([
-    tf.keras.layers.Dense(64, activation='relu', input_shape=(n,)),
-    tf.keras.layers.Dense(k, activation='sigmoid')
-])
+# Criar e treinar a rede neural
+model = train_neural_network(noisy_data, original_data)
 
-# Compilar o modelo
-model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
+# Gerar dados de teste
+test_noisy_data, test_original_data = generate_data(10)
 
-# Treinar o modelo
-model.fit(train_noisy_codewords, train_data, epochs=10, batch_size=32)  # Corrigido
+# Decodificar e corrigir os bits usando a rede neural
+decoded_data = decode_and_correct(test_noisy_data[0], model)
 
-# Testar o modelo com um exemplo
-
-test_bits = np.array([0, 1, 0, 1])  # Bits de entrada
-test_bits2 = np.array([0, 1, 0, 0])
-encoded_bits = hamming_encode(test_bits)  # Codifica os bits usando o código de Hamming
-encoded_bits2 = hamming_encode((test_bits2))
-print("Encoded bits are: ", encoded_bits)
-print("Encoded bits2 are: ", encoded_bits2)
-
-noisy_encoded_bits = add_noise(encoded_bits, 0.1)  # Adiciona ruído aos bits codificados
-noisy_encoded_bits2 = add_noise(encoded_bits2, 0.1)  # Adiciona ruído aos bits codificados
-
-print("Noisy bits are:", noisy_encoded_bits)
-print("Noisy bits2 are:", noisy_encoded_bits2)
-decoded_bits = np.round(model.predict(np.expand_dims(noisy_encoded_bits, axis=0))).astype(int)  # Decodifica os bits usando a rede neural
-decoded_bits2 = np.round(model.predict(np.expand_dims(noisy_encoded_bits2, axis=0))).astype(int)  # Decodifica os bits usando a rede neural
+# Exibir os resultados
+print("Bits originais:")
+print(test_original_data[0])
+print("Bits decodificados e corrigidos:")
+print(decoded_data)
 
 
-print("Bits de entrada:", test_bits)
-print("Bits de entrada2:", test_bits2)
-
-print("Bits decodificados pela rede neural:", decoded_bits)
-print("Bits2 decodificados pela rede neural:", decoded_bits2)
+data = generate_data(1)
