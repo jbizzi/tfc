@@ -7,11 +7,12 @@ from src import Utils
 
 sample_length = 2 ** 4
 chunk_size = 7
-noise_rates = np.linspace(0, 1, 11)
+noise_rates = np.linspace(0, 1, 101)
 
 
 def generate_data(num_samples):
     data = []
+
     for i in range(0, len(noise_rates)):
         data.append(''.join(np.random.choice(['0', '1'], size=sample_length)))
 
@@ -25,6 +26,7 @@ def train_neural_network(noisy_data, original_data):
     model = tf.keras.Sequential([
         tf.keras.layers.Dense(7, activation='relu', input_shape=(7,)),  # Ajustado para o comprimento da string
         tf.keras.layers.Dense(7, activation='relu'),  # Ajustado para o comprimento da string
+        tf.keras.layers.Dense(6, activation='relu'),  # Ajustado para o comprimento da string
         tf.keras.layers.Dense(4, activation='sigmoid')  # Ajustado para o comprimento da string
     ])
 
@@ -74,13 +76,14 @@ model = train_neural_network(noisy_data, original_data)
 test_noisy_data, test_original_data = generate_data(10)
 
 # Decodificar e corrigir os bits usando a rede neural
-decoded_data = decode_and_correct(test_noisy_data[0], model)
+decoded_data = decode_and_correct(test_noisy_data[6], model)
 
 # Exibir os resultados
 print("Bits originais:")
-print(test_original_data[0])
+print(test_original_data[6])
 print("Bits decodificados e corrigidos:")
 print(decoded_data)
+
 
 
 data = generate_data(1)
