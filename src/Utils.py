@@ -47,7 +47,7 @@ def noiseString(rate, word):
     for each in noise_positions:
         word[each] = str(int(word[each]) ^ 1)
 
-    return word
+    return toBooleanList(word)
 
 def calculateRecall(original, decoded):
     equals = 0
@@ -76,3 +76,36 @@ def generateDataSet(length):
     for rate in noise_rates:
         noisy_samples.append(noiseString(rate, encoded_sample))
     return noisy_samples, encoded_sample, sample, noise_rates
+
+def toBoolean(integer):
+    return True if integer == 1 else False
+
+def toBooleanList(list):
+    booleanList = []
+    for element in list:
+        booleanList.append(toBoolean(element))
+    return booleanList
+
+def calcular_BER_simulada(Eb_dB, tamanho=1e7):
+    # Gerar vetor x aleatoriamente com valores 1 ou -1
+    x = np.random.choice([1, -1], size=int(tamanho))
+
+    # Variância do ruído
+    variancia = 1
+
+    # Gerar ruído gaussiano N com média 0 e variância variancia
+    N = np.random.normal(0, np.sqrt(variancia / 2), size=int(tamanho))
+
+    # Valor de Eb
+    Eb = 10 ** (Eb_dB / 10)
+
+    # Calcular y = Eb * x + N
+    y = np.sqrt(Eb) * x + N
+
+    # Decodificar y como sendo sign(x + N)
+    y_decodificado = np.sign(y)
+
+    # Calcular a taxa de erro de bit
+    erro_de_bit = np.sum(y_decodificado != x) / tamanho
+
+    return erro_de_bit

@@ -1,33 +1,53 @@
-import numpy as np
-import tensorflow as tf
+import random
 
 import numpy as np
 import tensorflow as tf
 from src import Utils
 
-sample_length = 2 ** 4
-chunk_size = 7
-noise_rates = np.linspace(0, 1, 101)
+CHUNK_SIZE = 7
 
 
-def generate_data(num_samples):
-    data = []
+def getDefaultData():
+    return np.array((
+        [False, False, False, False],
+        [False, False, False, True],
+        [False, False, True, False],
+        [False, False, True, True],
+        [False, True, False, False],
+        [False, True, False, True],
+        [False, True, True, False],
+        [False, True, True, True],
+        [True, False, False, False],
+        [True, False, False, True],
+        [True, False, True, False],
+        [True, False, True, True],
+        [True, True, False, False],
+        [True, True, False, True],
+        [True, True, True, False],
+        [True, True, True, True],
+    ))
 
-    for i in range(0, len(noise_rates)):
-        data.append(''.join(np.random.choice(['0', '1'], size=sample_length)))
+
+def generate_data_for_training(noise_rates, total_samples):
+
+
+    data = getDefaultData()
+    if (total_samples < len(data)): # not enough samples
 
     encoded_data = [Utils.encode_sample(bit) for bit in data]
+
+
+
     noisy_data = [Utils.noiseString(error_rate, word) for word, error_rate in zip(encoded_data, noise_rates)]
     return noisy_data, data
 
 
 # Função para criar e treinar a rede neural
-def train_neural_network(noisy_data, original_data):
+def train_neural_network(noisy_data, original_data, epoches, sample_length):
     model = tf.keras.Sequential([
-        tf.keras.layers.Dense(7, activation='relu', input_shape=(7,)),  # Ajustado para o comprimento da string
-        tf.keras.layers.Dense(7, activation='relu'),  # Ajustado para o comprimento da string
-        tf.keras.layers.Dense(6, activation='relu'),  # Ajustado para o comprimento da string
-        tf.keras.layers.Dense(4, activation='sigmoid')  # Ajustado para o comprimento da string
+        tf.keras.layers.Dense(7, activation='relu', input_shape=(7,)),
+        tf.keras.layers.Dense(7, activation='relu'),
+        tf.keras.layers.Dense(4, activation='sigmoid')
     ])
 
     model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
@@ -48,11 +68,22 @@ def train_neural_network(noisy_data, original_data):
     model.fit(
         noisy_data_reshaped,
         original_data_reshaped,
-        epochs=50,
-        batch_size=int(sample_length / chunk_size)
+        epochs=epoches,
+        batch_size=int(sample_length / CHUNK_SIZE)
     )
-
     return model
+
+
+def generate_data_for_testing(word_length, noise_rates, words):
+    data = []
+    for i in range(0, words):
+        data.append(np.random.choice([True, False], size=word_length))
+
+    encoded_data = [Utils.encode_sample(bit) for bit in data]
+
+    noisy_data = [Utils.noiseString(random.randint(0, 100), word) for word in encoded_data]
+    return noisy_data, data
+
 
 def decode_and_correct(encoded_data, model):
     decoded_data = []
@@ -64,26 +95,4 @@ def decode_and_correct(encoded_data, model):
     return ''.join(str(int(each)) for each in np.concatenate(np.concatenate(decoded_data)))
 
 
-# Gerar dados de treinamento
-num_samples = 1000
-string_length = 10  # Parâmetro para o comprimento das strings
-noisy_data, original_data = generate_data(num_samples)
-
-# Criar e treinar a rede neural
-model = train_neural_network(noisy_data, original_data)
-
-# Gerar dados de teste
-test_noisy_data, test_original_data = generate_data(10)
-
-# Decodificar e corrigir os bits usando a rede neural
-decoded_data = decode_and_correct(test_noisy_data[6], model)
-
-# Exibir os resultados
-print("Bits originais:")
-print(test_original_data[6])
-print("Bits decodificados e corrigidos:")
-print(decoded_data)
-
-
-
-data = generate_data(1)
+generate_data_for_training(np.linspace(0, 1, 101))

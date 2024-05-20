@@ -1,6 +1,7 @@
 import random
 
 import numpy as np
+import Utils
 
 # Generator matrix G
 G = np.array([
@@ -33,7 +34,7 @@ def add_noise(data, index):
 
 # First four bits are data, fifth, sixth and seventh are parity checks
 def encode(data):
-    return np.dot(np.array([int(bit) for bit in data]), G) % 2
+    return Utils.toBooleanList(np.dot(np.array([int(bit) for bit in data]), G) % 2)
 
 # Decode function
 def decode(received_code):
