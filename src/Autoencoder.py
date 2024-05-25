@@ -7,6 +7,8 @@ from keras.src.optimizers.adam import Adam
 
 from src import Utils, HammingCode
 
+CHUNK_SIZE = 7
+
 def decode(model, full_sample):
 
     decoded = []
@@ -16,34 +18,21 @@ def decode(model, full_sample):
         decoded_bits = model.predict(input)[0]
         decoded.extend(Utils.roundToBits(decoded_bits))
     return decoded
-def create_and_train_auto_encoder(noisy, original, epoches):
+
+def create_and_train_auto_encoder(training_data, epoches, batch_size):
 
     autoencoder = create_auto_encoder()
 
-    noisy_data_reshaped = []
-    for noisy_sample in noisy:
-        for index in range(0, len(noisy_sample), 7):
-            noisy_data_reshaped.append(Utils.toInt(noisy_sample[index:index + 7]))
-
-    noisy_data_reshaped = np.array(noisy_data_reshaped)
-
-    original_data_reshaped = []
-    for original_sample in original:
-        for index in range(0, len(original_sample), 4):
-            original_data_reshaped.append(np.array(Utils.toInt(list(original_sample)[index:index + 4]), dtype=int))
-
-    original_data_reshaped = np.array(original_data_reshaped)
-
     autoencoder.fit(
-        noisy_data_reshaped,
-        original_data_reshaped,
+        training_data['noisy'],
+        training_data['original'],
         epochs=epoches,
-        batch_size=32,
+        batch_size=batch_size,
         shuffle=True,
-        validation_data=(noisy_data_reshaped, original_data_reshaped)
+        validation_data=(training_data['noisy'], training_data['original'])
     )
 
-    loss = autoencoder.evaluate(noisy_data_reshaped, original_data_reshaped)
+    loss = autoencoder.evaluate(training_data['noisy'], training_data['original'])
 
     print(f'Test Loss: {loss:.4f}')
     return autoencoder

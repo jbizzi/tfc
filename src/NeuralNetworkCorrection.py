@@ -8,36 +8,40 @@ from src import Utils, HammingCode
 
 CHUNK_SIZE = 7
 
-def generate_data_for_training(variancia, sample_length, Eb_db):
+def get_training_data_set(sample_length, variancia):
 
-    amostra = np.random.choice([0, 1], size=int(sample_length))
-    amostra_codificada = HammingCode.encode_sample(amostra)
+    data = np.random.choice([0, 1], size=int(sample_length))
+    split_encoded_data, split_original_data, merged_encoded_data = HammingCode.encode_sample(data)
 
-    for i in range(len(amostra_codificada)):
-        if amostra_codificada[i] == 0.0:
-            amostra_codificada[i] = -1.0
-        else:
-            amostra_codificada[i] = 1.0
+    # apply noise
+    ruido = np.random.normal(0, np.sqrt(variancia/2), size=int(len(merged_encoded_data)))
+    noisy_encoded_data = np.array(merged_encoded_data) + ruido
+
+    return {
+        'ruido': ruido,
+        'split_encoded_data': noisy_encoded_data, # will only split after tempering with eb_db
+        'split_original_data': split_original_data,
+        'encoded_data': noisy_encoded_data,
+        'original_data': data
+    }
+
+def generate_data_for_training(training_data_set, Eb_db):
 
     Eb = 10**(Eb_db /10)
 
-    ruido = np.random.normal(0, np.sqrt(variancia/2), size=int(len(amostra_codificada)))
+    amostra_ruidosa = np.sqrt(Eb) * np.array(training_data_set['encoded_data'])
 
-    amostra_ruidosa = np.sqrt(Eb) * np.array(amostra_codificada) + ruido
+    amostra_ruidosa_digital = [1 if x > 0.0 else 0 for x in amostra_ruidosa]
 
-    amostra_recebida = np.sign(amostra_ruidosa)
+    normalizedInfo = training_data_set
 
-    for i in range(len(amostra_recebida)):
-        if amostra_recebida[i] == -1:
-            amostra_recebida[i] = 0
-        else:
-            amostra_recebida[i] = 1
+    normalizedInfo['encoded_data'] = amostra_ruidosa_digital
+    normalizedInfo['split_encoded_data'] = np.array_split(amostra_ruidosa_digital, int(len(amostra_ruidosa_digital) / 7))
 
-    return amostra_recebida, amostra
+    return normalizedInfo
 
+def train_neural_network(training_data, epoches, batch_size):
 
-# Função para criar e treinar a rede neural
-def train_neural_network(noisy_data, original_data, epoches, sample_length):
 
     model = tf.keras.Sequential([
         tf.keras.layers.Dense(7, activation='relu', input_shape=(7,)),
@@ -45,44 +49,24 @@ def train_neural_network(noisy_data, original_data, epoches, sample_length):
         tf.keras.layers.Dense(4, activation='sigmoid')
     ])
 
+    print(all(len(each) == 7 for each in training_data['noisy']))
+    print(all(len(each) == 4 for each in training_data['original']))
+
     model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
-
-    # reshape data to be 7 bits and 4 bits each
-    noisy_data_reshaped = []
-    for noisy_sample in noisy_data:
-        for index in range(0, len(noisy_sample), 7):
-            noisy_data_reshaped.append(Utils.toInt(noisy_sample[index:index + 7]))
-    noisy_data_reshaped = np.array(noisy_data_reshaped)
-
-    original_data_reshaped = []
-    for original_sample in original_data:
-        for index in range(0, len(original_sample), 4):
-            original_data_reshaped.append(np.array(Utils.toInt(list(original_sample)[index:index + 4]), dtype=int))
-    original_data_reshaped = np.array(original_data_reshaped)
-
     model.fit(
-        noisy_data_reshaped,
-        original_data_reshaped,
+        training_data['noisy'],
+        training_data['original'],
         epochs=epoches,
-        batch_size=int(sample_length / CHUNK_SIZE)
+        batch_size=batch_size,
+        validation_data=(training_data['noisy'], training_data['original'])
     )
+
     return model
 
 def decode_and_correct(encoded_data, model):
     decoded_data = []
     for input_index in range(0, len(encoded_data), 7):
-        input = np.array(Utils.toInt(encoded_data[input_index:input_index + 7]))
-        input = tf.expand_dims(input, axis=0)
-        decoded_data.append(model.predict(input))
-
-    decoded = []
-    for each in decoded_data:
-        for bit_array in each:
-            for bit in bit_array:
-                corrected_bit = 1 if bit >= 0.5 else 0
-                decoded.append(corrected_bit)
-
-
-    return decoded #''.join((int(each)) for each in np.concatenate(np.concatenate(decoded_data)))
-
-
+        encoded_array = np.array(Utils.toInt(encoded_data[input_index:input_index + 7]))
+        encoded_array = tf.expand_dims(encoded_array, axis=0)
+        decoded_data.extend(Utils.roundToBits((model.predict(encoded_array)[0])))
+    return decoded_data

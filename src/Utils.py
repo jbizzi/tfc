@@ -7,7 +7,6 @@ from src import HammingCode
 
 def roundToBits(input):
     rounded = []
-    print(input)
     for bit in input:
         rounded.append(1 if bit >= 0.5 else 0)
     return rounded

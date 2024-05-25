@@ -34,7 +34,7 @@ def add_noise(data, index):
 
 # First four bits are data, fifth, sixth and seventh are parity checks
 def encode(data):
-    return Utils.toBooleanList(np.dot(np.array([int(bit) for bit in data]), G) % 2)
+    return np.dot(np.array([int(bit) for bit in data]), G) % 2
 
 # Decode function
 def decode(received_code):
@@ -57,7 +57,9 @@ def decode_sample(data):
     return decoded_data
 
 def encode_sample(data):
-    encoded_data = []
-    for i in range(0, len(data) - 3, 4):
-        encoded_data.extend(encode(data[i:i + 4]))
-    return encoded_data
+
+    split_original_data = np.array_split(data, int(len(data)/ 4))
+    split_encoded_data = [encode(chunk) for chunk in split_original_data]
+    merged_encoded_data = np.concatenate(split_encoded_data)
+
+    return split_encoded_data, split_original_data, merged_encoded_data
