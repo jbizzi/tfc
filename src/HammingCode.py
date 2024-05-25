@@ -50,3 +50,14 @@ def decode(received_code):
 
     return received_code[[2, 4, 5, 6]]
 
+def decode_sample(data):
+    decoded_data = []
+    for i in range(0, len(data) - 6, 7):
+        decoded_data.extend(decode(data[i:i + 7]).T)
+    return decoded_data
+
+def encode_sample(data):
+    encoded_data = []
+    for i in range(0, len(data) - 3, 4):
+        encoded_data.extend(encode(data[i:i + 4]))
+    return encoded_data

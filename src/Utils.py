@@ -5,6 +5,13 @@ import math
 from src import HammingCode
 
 
+def roundToBits(input):
+    rounded = []
+    print(input)
+    for bit in input:
+        rounded.append(1 if bit >= 0.5 else 0)
+    return rounded
+
 def encode_sample(data):
     encoded_data = []
     for i in range(0, len(data) - 3, 4):

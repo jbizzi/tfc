@@ -2,46 +2,16 @@ import random
 
 import numpy as np
 import tensorflow as tf
+from keras.src.optimizers.adam import Adam
+
 from src import Utils, HammingCode
 
 CHUNK_SIZE = 7
 
-def getDefaultData():
-    return np.array((
-        [0, 0, 0, 0],
-        [0, 0, 0, 1],
-        [0, 0, 1, 0],
-        [0, 0, 1, 1],
-        [0, 1, 0, 0],
-        [0, 1, 0, 1],
-        [0, 1, 1, 0],
-        [0, 1, 1, 1],
-        [1, 0, 0, 0],
-        [1, 0, 0, 1],
-        [1, 0, 1, 0],
-        [1, 0, 1, 1],
-        [1, 1, 0, 0],
-        [1, 1, 0, 1],
-        [1, 1, 1, 0],
-        [1, 1, 1, 1],
-    ))
-
-def decode_sample(data):
-    decoded_data = []
-    for i in range(0, len(data) - 6, 7):
-        decoded_data.extend(HammingCode.decode(data[i:i + 7]).T)
-    return decoded_data
-
-def encode_sample(data):
-    encoded_data = []
-    for i in range(0, len(data) - 3, 4):
-        encoded_data.extend(HammingCode.encode(data[i:i + 4]))
-    return encoded_data
-
 def generate_data_for_training(variancia, sample_length, Eb_db):
 
     amostra = np.random.choice([0, 1], size=int(sample_length))
-    amostra_codificada = encode_sample(amostra)
+    amostra_codificada = HammingCode.encode_sample(amostra)
 
     for i in range(len(amostra_codificada)):
         if amostra_codificada[i] == 0.0:
@@ -89,8 +59,7 @@ def train_neural_network(noisy_data, original_data, epoches, sample_length):
         for index in range(0, len(original_sample), 4):
             original_data_reshaped.append(np.array(Utils.toInt(list(original_sample)[index:index + 4]), dtype=int))
     original_data_reshaped = np.array(original_data_reshaped)
-    print(noisy_data_reshaped)
-    print(original_data_reshaped)
+
     model.fit(
         noisy_data_reshaped,
         original_data_reshaped,
