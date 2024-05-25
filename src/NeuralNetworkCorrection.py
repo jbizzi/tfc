@@ -1,3 +1,4 @@
+import copy
 import random
 
 import numpy as np
@@ -8,32 +9,30 @@ from src import Utils, HammingCode
 
 CHUNK_SIZE = 7
 
-def get_training_data_set(sample_length, variancia):
+def get_training_data_set(sample_length):
 
     data = np.random.choice([0, 1], size=int(sample_length))
     split_encoded_data, split_original_data, merged_encoded_data = HammingCode.encode_sample(data)
 
-    # apply noise
-    ruido = np.random.normal(0, np.sqrt(variancia/2), size=int(len(merged_encoded_data)))
-    noisy_encoded_data = np.array(merged_encoded_data) + ruido
-
     return {
-        'ruido': ruido,
-        'split_encoded_data': noisy_encoded_data, # will only split after tempering with eb_db
+        'split_encoded_data': [], # will only split after tempering with eb_db
         'split_original_data': split_original_data,
-        'encoded_data': noisy_encoded_data,
+        'encoded_data': merged_encoded_data,
         'original_data': data
     }
 
-def generate_data_for_training(training_data_set, Eb_db):
+def generate_data_for_training(training_data_set, Eb_db, variancia):
 
     Eb = 10**(Eb_db /10)
 
-    amostra_ruidosa = np.sqrt(Eb) * np.array(training_data_set['encoded_data'])
+    # apply noise
+    ruido = np.random.normal(0, np.sqrt(variancia/2), size=int(len(training_data_set['encoded_data'])))
+
+    amostra_ruidosa = np.sqrt(Eb) * np.array(training_data_set['encoded_data']) + ruido
 
     amostra_ruidosa_digital = [1 if x > 0.0 else 0 for x in amostra_ruidosa]
 
-    normalizedInfo = training_data_set
+    normalizedInfo = copy.deepcopy(training_data_set)
 
     normalizedInfo['encoded_data'] = amostra_ruidosa_digital
     normalizedInfo['split_encoded_data'] = np.array_split(amostra_ruidosa_digital, int(len(amostra_ruidosa_digital) / 7))
@@ -49,8 +48,6 @@ def train_neural_network(training_data, epoches, batch_size):
         tf.keras.layers.Dense(4, activation='sigmoid')
     ])
 
-    print(all(len(each) == 7 for each in training_data['noisy']))
-    print(all(len(each) == 4 for each in training_data['original']))
 
     model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
     model.fit(
@@ -63,10 +60,9 @@ def train_neural_network(training_data, epoches, batch_size):
 
     return model
 
-def decode_and_correct(encoded_data, model):
+def decode_and_correct(encoded, model):
     decoded_data = []
-    for input_index in range(0, len(encoded_data), 7):
-        encoded_array = np.array(Utils.toInt(encoded_data[input_index:input_index + 7]))
-        encoded_array = tf.expand_dims(encoded_array, axis=0)
+    for chunk in encoded:
+        encoded_array = tf.expand_dims(chunk, axis=0)
         decoded_data.extend(Utils.roundToBits((model.predict(encoded_array)[0])))
     return decoded_data

@@ -52,8 +52,9 @@ def decode(received_code):
 
 def decode_sample(data):
     decoded_data = []
-    for i in range(0, len(data) - 6, 7):
-        decoded_data.extend(decode(data[i:i + 7]).T)
+    for chunk in data:
+        decoded_data.extend(decode(chunk).T)
+   # print(decoded_data)
     return decoded_data
 
 def encode_sample(data):
