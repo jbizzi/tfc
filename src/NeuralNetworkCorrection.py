@@ -27,7 +27,6 @@ def generate_data_for_training(training_data_set, Eb_db, variancia):
 
     Eb = 10**(Eb_db /10)
 
-
     # apply noise
     ruido = np.random.normal(0, np.sqrt(variancia/2), size=int(len(training_data_set['encoded_data'])))
 
