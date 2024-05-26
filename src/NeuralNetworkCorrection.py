@@ -14,6 +14,7 @@ def get_training_data_set(sample_length):
     data = np.random.choice([0, 1], size=int(sample_length))
     split_encoded_data, split_original_data, merged_encoded_data = HammingCode.encode_sample(data)
 
+    merged_encoded_data = [1.0 if bit == 1 else -1.0 for bit in merged_encoded_data]
     return {
         'split_encoded_data': [], # will only split after tempering with eb_db
         'split_original_data': split_original_data,
@@ -24,6 +25,7 @@ def get_training_data_set(sample_length):
 def generate_data_for_training(training_data_set, Eb_db, variancia):
 
     Eb = 10**(Eb_db /10)
+
 
     # apply noise
     ruido = np.random.normal(0, np.sqrt(variancia/2), size=int(len(training_data_set['encoded_data'])))
