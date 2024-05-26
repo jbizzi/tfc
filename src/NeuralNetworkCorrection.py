@@ -3,7 +3,8 @@ import random
 
 import numpy as np
 import tensorflow as tf
-from keras.src.optimizers.adam import Adam
+from keras import Sequential
+from keras.src.layers import SimpleRNN, Dense
 
 from src import Utils, HammingCode
 
@@ -41,15 +42,23 @@ def generate_data_for_training(training_data_set, Eb_db, variancia):
 
     return normalizedInfo
 
+def create_RNN():
+
+    model = Sequential()
+    model.add(SimpleRNN(16, input_shape=(7, 1), activation='relu'))
+    model.add(Dense(4, activation='sigmoid'))
+    model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
+
+    return model
+
 def train_neural_network(training_data, epoches, batch_size):
 
 
     model = tf.keras.Sequential([
-        tf.keras.layers.Dense(7, activation='relu', input_shape=(7,)),
-        tf.keras.layers.Dense(7, activation='relu'),
+        tf.keras.layers.Dense(512, activation='relu', input_shape=(7,)),
+        tf.keras.layers.Dense(256, activation='relu'),
         tf.keras.layers.Dense(4, activation='sigmoid')
     ])
-
 
     model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
     model.fit(

@@ -28,29 +28,23 @@ def create_and_train_auto_encoder(training_data, epoches, batch_size):
         training_data['original'],
         epochs=epoches,
         batch_size=batch_size,
-        shuffle=True,
         validation_data=(training_data['noisy'], training_data['original'])
     )
-
-    loss = autoencoder.evaluate(training_data['noisy'], training_data['original'])
-
-    print(f'Test Loss: {loss:.4f}')
     return autoencoder
 
 def create_auto_encoder():
 
-    encoding_dim = 3
     input = tfk.layers.Input(shape=(7,))
 
     # encoder
-    encoder = tfk.layers.Dense(encoding_dim, activation='relu')(input)
+    encoder = tfk.layers.Dense(7, activation='relu')(input)
 
     # decoder with encoder as input
     decoder = tfk.layers.Dense(4, activation='sigmoid')(encoder)
 
     # model
-    autoencoder = tfk.models.Model(input, decoder)
+    autoencoder = tfk.models.Model(inputs=input, outputs=decoder)
 
-    autoencoder.compile(optimizer=Adam(), loss='binary_crossentropy')
+    autoencoder.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
     return autoencoder
 
