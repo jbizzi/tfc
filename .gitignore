@@ -1,2 +1,4 @@
 .idea/
 .venv/
+*-checkpoint.ipynb
+src/__pycache__/
