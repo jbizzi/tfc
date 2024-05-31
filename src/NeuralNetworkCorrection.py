@@ -13,6 +13,7 @@ CHUNK_SIZE = 7
 def get_training_data_set(sample_length):
 
     data = np.random.choice([0, 1], size=int(sample_length))
+
     split_encoded_data, split_original_data, merged_encoded_data = HammingCode.encode_sample(data)
 
     merged_encoded_data = [1.0 if bit == 1 else -1.0 for bit in merged_encoded_data]
@@ -52,7 +53,6 @@ def create_RNN():
 
 def train_neural_network(training_data, epoches, batch_size):
 
-
     model = tf.keras.Sequential([
         tf.keras.layers.Dense(512, activation='relu', input_shape=(7,)),
         tf.keras.layers.Dense(256, activation='relu'),
@@ -72,7 +72,8 @@ def train_neural_network(training_data, epoches, batch_size):
 
 def decode_and_correct(encoded, model):
     decoded_data = []
-    for chunk in encoded:
-        encoded_array = tf.expand_dims(chunk, axis=0)
-        decoded_data.extend(Utils.roundToBits((model.predict(encoded_array)[0])))
-    return decoded_data
+    for index in range(0, len(encoded), 100):
+        decoded = Utils.roundToBits(model.predict_on_batch(np.array(encoded[index:index + 100])))
+        decoded_data.extend(decoded)
+
+    return np.array(decoded_data).flatten()

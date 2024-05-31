@@ -7,8 +7,11 @@ from src import HammingCode
 
 def roundToBits(input):
     rounded = []
-    for bit in input:
-        rounded.append(1 if bit >= 0.5 else 0)
+    for array in input:
+        sublist = []
+        for bit in array:
+            sublist.append(1 if bit >= 0.5 else 0)
+        rounded.append(sublist)
     return rounded
 
 def encode_sample(data):
