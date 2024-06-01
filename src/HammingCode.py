@@ -53,6 +53,7 @@ def decode_sample(data):
     return decoded_data
 
 def encode_sample(data):
+
     split_original_data = np.array_split(data, int(len(data)/ 4))
     split_encoded_data = [encode(chunk) for chunk in split_original_data]
     merged_encoded_data = np.concatenate(split_encoded_data)
