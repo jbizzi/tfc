@@ -3,7 +3,6 @@ import random
 import numpy as np
 import tensorflow as tf
 import tensorflow.keras as tfk
-from keras.src.optimizers.adam import Adam
 
 from src import Utils, HammingCode
 

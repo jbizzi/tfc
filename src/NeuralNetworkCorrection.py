@@ -27,7 +27,8 @@ def get_training_data_set(sample_length):
         'original_data': data,
         'noisy_original_data_15_11': [],
         'split_noisy_original_data_15_11': [],
-        'split_original_data_15_11': []
+        'split_original_data_15_11': [],
+        'padded_array': []
     }
 
 def generate_data_for_training(training_data_set, Eb_db, variancia):
@@ -51,20 +52,20 @@ def generate_data_for_training(training_data_set, Eb_db, variancia):
 
     normalizedInfo['split_original_data_15_11'] = split_and_pad(11, training_data_set['original_data'])
     normalizedInfo['split_noisy_original_data_15_11'] = split_and_pad(11, amostra_ruidosa_original_digital)
-
+    normalizedInfo['padded_array'] = pad_array(11, training_data_set['original_data'])
     return normalizedInfo
 
-def split_and_pad(chunk, array):
+def pad_array(chunk, array):
+    total_chunks = math.floor(len(array) / chunk)
 
-
-    total_chunks = math.floor(len(array) / 11)
-
-    total_length_chunks = total_chunks * 11
+    total_length_chunks = total_chunks * chunk
     smaller_array_len = len(array) - total_length_chunks
-    remaining = 11 - smaller_array_len
-
+    remaining = chunk - smaller_array_len
     padded_array = np.pad(array, (0, remaining), 'constant', constant_values=0)
-    return np.array_split(padded_array, int(len(padded_array) / 11))
+    return padded_array
+def split_and_pad(chunk, array):
+    padded_array = pad_array(chunk, array)
+    return np.array_split(padded_array, int(len(padded_array) / chunk))
 
 def train_neural_network(training_data, epoches, batch_size):
 
@@ -76,6 +77,8 @@ def train_neural_network(training_data, epoches, batch_size):
     model.add(Dense(11, activation='sigmoid'))
 
     model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
+
+    print(training_data['original'])
 
     X_train, X_test, y_train, y_test = train_test_split(
         training_data['noisy'],
