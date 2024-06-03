@@ -53,7 +53,7 @@ def generate_data_for_training(training_data_set, Eb_db, variancia):
     normalizedInfo = copy.deepcopy(training_data_set)
 
     normalizedInfo['encoded_data'] = amostra_ruidosa_digital_7_4
-    normalizedInfo['split_encoded_data'] = np.array_split(amostra_ruidosa_digital_7_4, 7)
+    normalizedInfo['split_encoded_data'] = np.array_split(amostra_ruidosa_digital_7_4, int(len(amostra_ruidosa_digital_7_4)/7))
 
     normalizedInfo['split_original_data_15_11'] = np.array_split(training_data_set['padded_array_original_data'], int(len(training_data_set['padded_array_original_data'])/11))
     normalizedInfo['split_noisy_original_data_15_11'] = np.array_split(amostra_ruidosa_original_digital, int(len(amostra_ruidosa_original_digital)/11))
@@ -84,8 +84,6 @@ def train_neural_network(training_data, epoches, batch_size):
     early_stopping = EarlyStopping(monitor='val_loss', patience=10, restore_best_weights=True)
 
     model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
-
-    print(training_data['original'])
 
     X_train, X_test, y_train, y_test = train_test_split(
         training_data['noisy'],
