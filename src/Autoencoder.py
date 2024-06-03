@@ -11,8 +11,8 @@ CHUNK_SIZE = 7
 def decode(model, full_sample):
 
     decoded = []
-    for input_index in range(0, len(full_sample), 11):
-        input = Utils.toInt(full_sample[input_index:input_index + 11])
+    for input_index in range(0, len(full_sample), 4):
+        input = Utils.toInt(full_sample[input_index:input_index + 4])
         input = tf.expand_dims(input, axis=0)
         decoded_bits = model.predict(input)[0]
         decoded.extend(Utils.roundToBits(decoded_bits))
