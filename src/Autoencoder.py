@@ -3,6 +3,7 @@ import random
 import numpy as np
 import tensorflow as tf
 import tensorflow.keras as tfk
+from keras.src.callbacks import EarlyStopping, ReduceLROnPlateau
 
 from src import Utils, HammingCode
 
@@ -21,13 +22,16 @@ def decode(model, full_sample):
 def create_and_train_auto_encoder(training_data, epoches, batch_size):
 
     autoencoder = create_auto_encoder()
+    reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.2, patience=5, min_lr=0.001)
+    early_stopping = EarlyStopping(monitor='val_loss', patience=10, restore_best_weights=True)
 
     autoencoder.fit(
         training_data['noisy'],
         training_data['original'],
         epochs=epoches,
         batch_size=batch_size,
-        validation_data=(training_data['noisy'], training_data['original'])
+        validation_data=(training_data['noisy'], training_data['original']),
+        callbacks=[reduce_lr, early_stopping]
     )
     return autoencoder
 
