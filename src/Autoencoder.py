@@ -8,6 +8,10 @@ from keras.src.callbacks import EarlyStopping, ReduceLROnPlateau
 from src import Utils, HammingCode
 
 CHUNK_SIZE = 7
+from src import NeuralNetworkCorrection
+
+data_bits = NeuralNetworkCorrection.data_bits
+
 
 def decode(model, full_sample):
 
@@ -37,13 +41,13 @@ def create_and_train_auto_encoder(training_data, epoches, batch_size):
 
 def create_auto_encoder():
 
-    input = tfk.layers.Input(shape=(11,))
+    input = tfk.layers.Input(shape=(data_bits,))
 
     # encoder
-    encoder = tfk.layers.Dense(15, activation='relu')(input)
+    encoder = tfk.layers.Dense(data_bits, activation='relu')(input)
 
     # decoder with encoder as input
-    decoder = tfk.layers.Dense(11, activation='sigmoid')(encoder)
+    decoder = tfk.layers.Dense(data_bits, activation='sigmoid')(encoder)
 
     # model
     autoencoder = tfk.models.Model(inputs=input, outputs=decoder)
