@@ -1,9 +1,7 @@
 import copy
-import random
 
 import numpy as np
 import tensorflow as tf
-from keras import Sequential
 from keras.src.callbacks import ReduceLROnPlateau, EarlyStopping
 from keras.src.layers import SimpleRNN, Dense, Dropout
 import math
@@ -13,7 +11,7 @@ from sklearn.model_selection import train_test_split
 from src import Utils, HammingCode
 
 CHUNK_SIZE = 7
-data_bits = 11
+data_bits = 4
 code_error = 11/15
 def get_training_data_set(sample_length):
 

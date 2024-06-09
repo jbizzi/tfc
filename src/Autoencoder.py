@@ -3,7 +3,9 @@ import random
 import numpy as np
 import tensorflow as tf
 import tensorflow.keras as tfk
+from keras import Input, Model
 from keras.src.callbacks import EarlyStopping, ReduceLROnPlateau
+from keras.src.layers import Dense, BatchNormalization, GaussianNoise
 
 from src import Utils, HammingCode
 
@@ -23,34 +25,39 @@ def decode(model, full_sample):
         decoded.extend(Utils.roundToBits(decoded_bits))
     return decoded
 
-def create_and_train_auto_encoder(training_data, epoches, batch_size):
+def create_and_train_auto_encoder(training_data):
 
-    autoencoder = create_auto_encoder()
-    reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.2, patience=5, min_lr=0.001)
-    early_stopping = EarlyStopping(monitor='val_loss', patience=10, restore_best_weights=True)
+    size = 4
+    code_rate = 4/7
+    neurons = 7
+    entrada = Input(shape=(size,))
+    encoder1 = Dense(size, activation='relu')(entrada)
+    encoder2 = Dense(neurons, activation='linear')(encoder1)
+    encoder3 = BatchNormalization()(encoder2)
+
+
+    Eb_treinamento = 5.01187 * code_rate
+
+    noise = GaussianNoise(np.sqrt(Eb_treinamento))(encoder3)
+    decoder1 = Dense(size, activation='relu')(noise)
+    decoder2 = Dense(size, activation='softmax')(decoder1)
+
+    autoencoder = Model(entrada, decoder2)
+    autoencoder.compile(optimizer='adam', loss='categorical_crossentropy')
 
     autoencoder.fit(
-        training_data['noisy'],
         training_data['original'],
-        epochs=epoches,
-        batch_size=batch_size,
-        validation_data=(training_data['noisy'], training_data['original']),
-        callbacks=[reduce_lr, early_stopping]
+        training_data['original'],
+        epochs=20,
+        batch_size=300,
+        validation_data=(training_data['original'], training_data['original']),
     )
-    return autoencoder
 
-def create_auto_encoder():
+    # Com o modelo treinado, separa em encoder e decoder
+    encoder = Model(entrada, encoder3)
 
-    input = tfk.layers.Input(shape=(data_bits,))
-
-    # encoder
-    encoder = tfk.layers.Dense(data_bits, activation='relu')(input)
-
-    # decoder with encoder as input
-    decoder = tfk.layers.Dense(data_bits, activation='sigmoid')(encoder)
-
-    # model
-    autoencoder = tfk.models.Model(inputs=input, outputs=decoder)
-
-    autoencoder.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
-    return autoencoder
+    entrada_encoder = Input(shape=(7,))
+    decoder_layer1 = autoencoder.layers[-2](entrada_encoder)
+    decoder_layer2 = autoencoder.layers[-1](decoder_layer1)
+    decoder = Model(entrada_encoder, decoder_layer2)
+    return autoencoder, encoder, decoder
