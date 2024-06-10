@@ -28,8 +28,7 @@ def add_noise(data, index):
 # First four bits are data, fifth, sixth and seventh are parity checks
 def encode(data):
     encoded = np.dot(np.array([int(bit) for bit in data]), G) % 2
-    #print(encoded)
-    return encoded
+    return encoded.T
     #return np.transpose(encoded)
 
 # Decode function

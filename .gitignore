@@ -2,3 +2,5 @@
 .venv/
 *-checkpoint.ipynb
 src/__pycache__/
+src/autoencoder
+src/mlp
